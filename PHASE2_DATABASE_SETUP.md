@@ -63,6 +63,21 @@ Validation checks schema and configuration; it **does not** apply migrations or 
 
 A real `.env` is ignored by Git. Never paste connection strings in chats, screenshots, logs, or committed files.
 
+
+### Safe connection verification (no table writes)
+
+After saving your private `backend/.env` and verifying it is ignored by Git, run these commands from the repository root in VS Code PowerShell:
+
+```powershell
+git pull --ff-only origin feature/phase2-prisma-schema
+cd backend
+npx.cmd prisma validate
+node scripts/verify-neon.mjs
+cd ..
+```
+
+The verifier checks both Neon hostnames against the project's actual **development** compute endpoint, validates the expected database and role, then runs only a `SELECT` in an explicit `READ ONLY` transaction on each connection. It never prints connection strings, credentials, or hostnames. Share only the safe OK/error-code output. Do **not** run `migrate dev` or `db push` at this stage.
+
 ## Step 5: Review migration, then apply (separate step)
 
 We will inspect and review the generated SQL **before** running `prisma migrate dev`. No migrations are generated or applied by this change.
