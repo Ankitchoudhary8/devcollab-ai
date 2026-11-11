@@ -4,9 +4,10 @@
  * Run from backend: node scripts/verify-neon.mjs
  */
 import { config } from "dotenv";
+import { fileURLToPath } from "node:url";
 import pg from "pg";
 
-config({ path: new URL("../.env", import.meta.url), quiet: true });
+config({ path: fileURLToPath(new URL("../.env", import.meta.url)), quiet: true });
 
 const EXPECTED_DATABASE = "devcollab";
 const EXPECTED_ROLE = "devcollab_owner";
