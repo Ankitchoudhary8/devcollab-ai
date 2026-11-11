@@ -12,3 +12,6 @@ node_modules/
 .vscode/
 *.log
 coverage/
+
+# Generated Prisma 7 client (regenerated locally / on CI)
+backend/src/generated/prisma/
