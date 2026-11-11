@@ -7,7 +7,9 @@ import { config } from "dotenv";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 
-config({ path: fileURLToPath(new URL("../.env", import.meta.url)), quiet: true });
+// Read exactly backend/.env instead of inherited process variables.
+const localEnv = {};
+config({ path: fileURLToPath(new URL("../.env", import.meta.url)), processEnv: localEnv, quiet: true });
 
 const EXPECTED_DATABASE = "devcollab";
 const EXPECTED_ROLE = "devcollab_owner";
@@ -29,7 +31,7 @@ const ENDPOINTS = [
 ];
 
 async function verify({ key, type, host }) {
-  const secret = process.env[key];
+  const secret = localEnv[key];
   if (!secret) {
     console.error(`${key}: missing in backend/.env.`);
     return false;
@@ -43,15 +45,19 @@ async function verify({ key, type, host }) {
     return false;
   }
 
-  if (
-    !["postgres:", "postgresql:"].includes(parsed.protocol) ||
-    parsed.hostname.toLowerCase() !== host ||
-    decodeURIComponent(parsed.pathname) !== `/${EXPECTED_DATABASE}` ||
-    decodeURIComponent(parsed.username) !== EXPECTED_ROLE
-  ) {
-    console.error(
-      `${key}: wrong Neon endpoint, database, or role. Check project DevCollab AI / development / devcollab; do not paste URLs here.`,
-    );
+  // Never display private URL components; only name the mismatched fields.
+  const issues = [];
+  if (!["postgres:", "postgresql:"].includes(parsed.protocol)) issues.push("URL protocol");
+  if (parsed.hostname.toLowerCase() !== host) issues.push("hostname (Neon project, branch, or pooler choice)");
+  try {
+    if (decodeURIComponent(parsed.pathname) !== "/" + EXPECTED_DATABASE) issues.push("database name");
+    if (decodeURIComponent(parsed.username) !== EXPECTED_ROLE) issues.push("database role");
+  } catch {
+    issues.push("URL encoding");
+  }
+  if (issues.length > 0) {
+    console.error(key + ": mismatch in " + issues.join(", ") + ".");
+    console.error(key + ": use Neon project DevCollab AI / development / devcollab / devcollab_owner.");
     return false;
   }
 
