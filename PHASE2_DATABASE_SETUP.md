@@ -36,7 +36,22 @@ We deliberately use the same major version for the Prisma CLI, client, and Postg
 
 ## Step 3: Validate schema without writing any database tables
 
-From the repository root:
+The schema contains seven models: User, Skill, UserSkill, Project, ProjectSkill, ProjectApplication and ProjectMember.
+
+The initial validation can be performed without a connection using `npx.cmd prisma validate --schema backend/prisma/schema.prisma` from the repo root, as already done.
+
+**Prisma 7 config:** `backend/prisma.config.ts` is the discoverable config file. It requires `DIRECT_URL` for Prisma CLI operations, preventing accidental fallback to the application's pooled URL.
+
+## Step 4: Set private development connection strings
+
+1. In the Neon Console choose project **DevCollab AI**, branch **development**, database **devcollab**, role `devcollab_owner`.
+2. Copy `backend/.env.example` to `backend/.env` locally: from project root run `Copy-Item backend/.env.example backend/.env` **only if `backend/.env` does not already exist**.
+3. For `DATABASE_URL`, paste a pooled (`-pooler`) Neon URL into local `backend/.env`.
+4. For `DIRECT_URL`, paste a direct (non-`-pooler`) Neon URL into local `backend/.env`. The two URLs should point to the **same** DevCollab AI database.
+5. Do not put credentials into GitHub or chat, and do not share screenshots of `.env`.
+6. From the project root run `git check-ignore backend/.env`. It should print `backend/.env`; if not, stop and fix `.gitignore`.
+
+From the repo root, after setting local URLs:
 
 ```powershell
 cd backend
@@ -44,19 +59,9 @@ npx.cmd prisma validate
 cd ..
 ```
 
-The schema has seven models: User, Skill, UserSkill, Project, ProjectSkill, ProjectApplication, and ProjectMember.
+Validation checks schema and configuration; it **does not** apply migrations or write tables. Review the target database before any future migration.
 
-**Validation only checks the Prisma definitions. It does not run a migration.**
-
-## Step 4: Private connection settings (later, before migration)
-
-Create `backend/.env` from `backend/.env.example` and insert credentials copied **privately** from the DevCollab AI project in Neon:
-
-- `DATABASE_URL`: pooled connection string for application traffic.
-- `DIRECT_URL`: direct, non-pooled connection string for migrations.
-- Verify the branch is `development` and the database is exactly `devcollab`.
-
-The real `.env` is ignored by Git. Never paste connection strings in chats or screenshots.
+A real `.env` is ignored by Git. Never paste connection strings in chats, screenshots, logs, or committed files.
 
 ## Step 5: Review migration, then apply (separate step)
 
