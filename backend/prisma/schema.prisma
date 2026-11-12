@@ -1,0 +1,127 @@
+// Phase 2: DevCollab AI relational data model.
+// Designed for the *separate* DevCollab AI Neon project, NOT Expense Tracker Pro.
+//
+// Prisma 7: the database URL belongs in prisma7.config.ts, not in this file.
+// No migration has been applied. Review relationships before migrating.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProjectStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
+model User {
+  id             String               @id @default(cuid())
+  email          String               @unique @db.VarChar(254)
+  displayName    String               @db.VarChar(80)
+  passwordHash   String?              @db.VarChar(255)
+  bio            String?              @db.Text
+  githubUsername String?              @db.VarChar(39)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  ownedProjects  Project[]            @relation("ProjectOwner")
+  applications   ProjectApplication[]
+  memberships    ProjectMember[]
+  skills         UserSkill[]
+}
+
+model Skill {
+  id            String         @id @default(cuid())
+  name          String         @unique @db.VarChar(80)
+  users         UserSkill[]
+  projects      ProjectSkill[]
+}
+
+model UserSkill {
+  userId  String
+  skillId String
+
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill   Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillId])
+  @@index([skillId])
+}
+
+model Project {
+  id             String               @id @default(cuid())
+  title          String               @db.VarChar(140)
+  description    String               @db.Text
+  status         ProjectStatus        @default(OPEN)
+  maxMembers     Int                  @default(5)
+  ownerId        String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  owner          User                 @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  requiredSkills ProjectSkill[]
+  applications   ProjectApplication[]
+  members        ProjectMember[]
+
+  @@index([ownerId])
+  @@index([status, createdAt])
+}
+
+model ProjectSkill {
+  projectId String
+  skillId   String
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skill     Skill   @relation(fields: [skillId], references: [id], onDelete: Restrict)
+
+  @@id([projectId, skillId])
+  @@index([skillId])
+}
+
+model ProjectApplication {
+  id          String            @id @default(cuid())
+  projectId   String
+  applicantId String
+  message     String?           @db.VarChar(1000)
+  status      ApplicationStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  applicant   User              @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, applicantId])
+  @@index([applicantId, status])
+}
+
+model ProjectMember {
+  projectId String
+  userId    String
+  role      MemberRole @default(MEMBER)
+  joinedAt  DateTime   @default(now())
+
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId])
+}
