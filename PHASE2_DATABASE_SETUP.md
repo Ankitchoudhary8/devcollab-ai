@@ -64,6 +64,23 @@ Validation checks schema and configuration; it **does not** apply migrations or 
 A real `.env` is ignored by Git. Never paste connection strings in chats, screenshots, logs, or committed files.
 
 
+### Automated local setup (recommended on Windows)
+
+Instead of copying passwords by hand, use the official Neon CLI on your own PC:
+
+```powershell
+npm.cmd install --global neon@latest
+neon.cmd auth
+```
+
+Sign into the Neon account that owns the existing **DevCollab AI** project when the browser opens. After login, from `devcollab-ai/backend` run:
+
+```powershell
+node scripts/sync-neon-env.mjs
+```
+
+The script requests both URLs for the pinned **DevCollab AI / development / devcollab / devcollab_owner** target, checks the direct and pooled hostnames, updates only `DIRECT_URL` and `DATABASE_URL` in ignored `backend/.env`, then performs the existing read-only connection check. Credentials are not logged, committed, or sent to ChatGPT. It does not create/change tables or run migrations.
+
 ### Safe connection verification (no table writes)
 
 After saving your private `backend/.env` and verifying it is ignored by Git, run these commands from the repository root in VS Code PowerShell:
